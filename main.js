@@ -7,6 +7,7 @@ $(function () {
     // const inputCtx = inputCvs.getContext("2d");
     // const previewCtx = previewCvs.getContext("2d");
 
+    let zip, num, remaining;
     const parseFile = function (file) {
         const fr = new FileReader();
 
@@ -41,14 +42,12 @@ $(function () {
                     185, 340
                 ];
 
-                let zip = new JSZip();
-                let num = 1;
                 for (let r = 0; r < 3; r++) {
                     for (let c = 0; c < 3; c++) {
-                        $("body").append(
-                            $("<br/>")
-                        );
-                        const $cvs = $("<canvas/>").appendTo("body");
+                        // $("body").append(
+                        //     $("<br/>")
+                        // );
+                        const $cvs = $("<canvas/>").appendTo("body").css("display", "none");
                         const cvs = $cvs[0];
                         const ctx = cvs.getContext("2d");
 
@@ -66,13 +65,21 @@ $(function () {
                         zip.file("img" + (num++) + ".png", cvs.toDataURL().split(/,/g)[1], {
                             base64: true
                         });
+
+                        remaining--;
                     }
                 }
-                zip.generateAsync({ type: "base64" }).then(function (base64) {
-                    $("body").append(
-                        $("<a/>").html("Download").attr("download", "images.zip").attr("href", "data:application/zip;base64," + base64)
-                    );
-                });
+
+                console.log("Remaining images: " + remaining);
+
+                if (remaining === 0) {
+                    zip.generateAsync({ type: "blob" }).then(function (blob) {
+                        const url = URL.createObjectURL(blob);
+                        $("body").append(
+                            $("<a/>").html("Download").attr("download", "images.zip").attr("href", url)
+                        );
+                    });
+                }
             });
         });
     };
@@ -104,7 +111,12 @@ $(function () {
 
         $("body").css("background-color", "#222");
 
+        zip = new JSZip();
+        num = 1;
+
         const files = e.dataTransfer.files;
+
+        remaining = files.length * 3 * 3;
 
         for (let file of files) {
             parseFile(file);
